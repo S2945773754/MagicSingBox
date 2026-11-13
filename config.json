@@ -6,245 +6,289 @@
   "dns": {
     "servers": [
       {
-        "type": "https",
-        "tag": "bootstrap-local-dns",
-        "server": "223.5.5.5",
-        "server_port": 443,
-        "path": "/dns-query",
-        "headers": {
-          "Host": "dns.alidns.com"
-        },
-        "tls": {
-          "enabled": true,
-          "server_name": "dns.alidns.com"
+        "type": "hosts",
+        "tag": "🛼DoH钉子",
+        "predefined": {
+          "dns.google": [
+            "8.8.8.8",
+            "8.8.4.4",
+            "2001:4860:4860::8888",
+            "2001:4860:4860::8844"
+          ],
+          "cloudflare-dns.com": [
+            "1.1.1.1",
+            "1.0.0.1",
+            "2606:4700:4700::1111",
+            "2606:4700:4700::1001"
+          ]
         }
       },
       {
+        "tag": "🛼Bootstrap DNS",
         "type": "https",
-        "tag": "doh-google",
-        "detour": "proxy",
-        "server": "8.8.8.8",
+        "server": "223.5.5.5"
+      },
+      {
+        "tag": "🛼Bootstrap DNS2",
+        "type": "https",
+        "server": "119.29.29.29"
+      },
+      {
+        "tag": "✈️ProxyDNS-Google",
+        "type": "https",
+        "server": "dns.google",
+        "domain_resolver": "🛼DoH钉子",
+        "detour": "final"
+      },
+      {
+        "tag": "✈️ProxyDNS-Cloudflare",
+        "type": "https",
+        "server": "cloudflare-dns.com",
+        "domain_resolver": "🛼DoH钉子",
+        "detour": "final"
+      },
+      {
+        "tag": "🚩DirectDNS-Ali",
+        "type": "https",
+        "server": "dns.alidns.com",
         "server_port": 443,
-        "path": "/dns-query",
-        "tls": {
-          "enabled": true,
-          "server_name": "dns.google"
-        }
+        "domain_resolver": "🛼Bootstrap DNS"
+      },
+      {
+        "tag": "🚩DirectDNS-Tencent",
+        "type": "https",
+        "server": "doh.pub",
+        "server_port": 443,
+        "domain_resolver": "🛼Bootstrap DNS2"
+      },
+      {
+        "type": "mdns",
+        "tag": "🏠mDNS"
       },
       {
         "type": "https",
+        "tag": "🍊家庭WiFi",
+        "server": "10.10.10.10"
+      },
+      {
         "tag": "doh-cloudflare",
-        "detour": "proxy",
-        "server": "1.1.1.1",
-        "server_port": 443,
-        "path": "/dns-query",
-        "tls": {
-          "enabled": true,
-          "server_name": "cloudflare-dns.com"
-        }
+        "type": "https",
+        "server": "cloudflare-dns.com",
+        "domain_resolver": "🛼DoH钉子",
+        "detour": "final"
       }
     ],
     "rules": [
       {
-        "domain_suffix": [
-          "lmm.best"
+        "wifi_ssid": [
+          "橘子🍊"
         ],
-        "server": "doh-cloudflare"
+        "server": "🍊家庭WiFi"
       },
       {
-        "protocol": "icmp",
-        "server": "doh-google"
+        "clash_mode": "direct",
+        "server": "🚩DirectDNS-Ali"
       },
       {
-        "clash_mode": "Direct",
-        "server": "bootstrap-local-dns"
+        "clash_mode": "global",
+        "server": "✈️ProxyDNS-Google"
       },
       {
-        "clash_mode": "Global",
-        "server": "doh-cloudflare"
-      },
-      {
-        "domain_suffix": [
-          "local",
-          "home.arpa",
-          "lan"
-        ],
-        "server": "bootstrap-local-dns"
-      },
-      {
-        "domain_suffix": [
-          "tailscale.net",
-          "ts.net"
-        ],
-        "server": "bootstrap-local-dns"
+        "preferred_by": "🏠mDNS",
+        "action": "route",
+        "server": "🏠mDNS"
       },
       {
         "rule_set": [
-          "meta-google-gemini",
-          "meta-google-play"
+          "cn"
         ],
-        "server": "doh-google"
-      },
-      {
-        "domain": [
-          "accounts.google.com",
-          "android.clients.google.com",
-          "android.googleapis.com",
-          "android.apis.google.com",
-          "oauth2.googleapis.com",
-          "mtalk.google.com",
-          "checkin.gstatic.com"
-        ],
-        "server": "doh-google"
+        "action": "evaluate",
+        "server": "🚩DirectDNS-Ali",
+        "tag": "AliCN",
+        "timeout": "2s"
       },
       {
         "rule_set": [
-          "lyc-geosite-ads",
-          "hagezi-light"
+          "cn"
         ],
-        "server": "doh-cloudflare"
+        "match_response": "AliCN",
+        "response_rcode": "NOERROR",
+        "ip_accept_any": true,
+        "action": "respond",
+        "race": true
       },
       {
         "rule_set": [
-          "meta-youtube",
-          "meta-google"
+          "cn"
         ],
-        "server": "doh-google"
+        "action": "evaluate",
+        "server": "🚩DirectDNS-Tencent",
+        "tag": "TencentCN",
+        "speculative": true,
+        "timeout": "2s"
       },
       {
         "rule_set": [
-          "meta-tencent",
-          "service-wechat-dns"
+          "cn"
         ],
-        "server": "bootstrap-local-dns"
+        "match_response": "TencentCN",
+        "response_rcode": "NOERROR",
+        "ip_accept_any": true,
+        "action": "respond",
+        "race": true
       },
       {
         "rule_set": [
-          "meta-category-doh",
-          "meta-category-ip-geo-detect"
+          "proxy",
+          "gfw",
+          "tld-proxy",
+          "media",
+          "games",
+          "steam",
+          "epicgames",
+          "netflix",
+          "disney",
+          "max",
+          "primevideo",
+          "appletv",
+          "youtube",
+          "tiktok",
+          "spotify",
+          "instagram",
+          "twitter",
+          "pornhub",
+          "ehentai",
+          "microsoft",
+          "apple",
+          "google",
+          "googlefcm",
+          "cryptocurrency",
+          "github",
+          "telegram",
+          "ai",
+          "networktest"
         ],
-        "server": "doh-cloudflare"
-      },
-      {
-        "domain_suffix": [
-          "edu.cn",
-          "moe.gov.cn",
-          "chsi.com.cn",
-          "smartedu.cn",
-          "neea.cn",
-          "ncss.cn",
-          "icourse163.org",
-          "icourses.cn",
-          "xuetangx.com",
-          "yuketang.cn",
-          "chaoxing.com",
-          "zhihuishu.com",
-          "eol.cn",
-          "cnki.net",
-          "wanfangdata.com.cn",
-          "cqvip.com"
-        ],
-        "server": "bootstrap-local-dns"
-      },
-      {
-        "domain": [
-          "connect.rom.miui.com",
-          "connectivitycheck.platform.hicloud.com"
-        ],
-        "server": "bootstrap-local-dns"
-      },
-      {
-        "rule_set": [
-          "meta-connectivity-check",
-          "meta-speedtest",
-          "meta-openai",
-          "meta-xai",
-          "meta-anthropic",
-          "meta-github",
-          "meta-discord",
-          "meta-netflix",
-          "meta-spotify",
-          "meta-twitter",
-          "meta-whatsapp",
-          "meta-telegram"
-        ],
-        "server": "doh-google"
+        "action": "evaluate",
+        "server": "✈️ProxyDNS-Google",
+        "tag": "GoogleDNS",
+        "timeout": "2s"
       },
       {
         "rule_set": [
-          "meta-bing@cn"
+          "proxy",
+          "gfw",
+          "tld-proxy",
+          "media",
+          "games",
+          "steam",
+          "epicgames",
+          "netflix",
+          "disney",
+          "max",
+          "primevideo",
+          "appletv",
+          "youtube",
+          "tiktok",
+          "spotify",
+          "instagram",
+          "twitter",
+          "pornhub",
+          "ehentai",
+          "microsoft",
+          "apple",
+          "google",
+          "googlefcm",
+          "cryptocurrency",
+          "github",
+          "telegram",
+          "ai",
+          "networktest"
         ],
-        "server": "bootstrap-local-dns"
+        "match_response": "GoogleDNS",
+        "response_rcode": "NOERROR",
+        "ip_accept_any": true,
+        "action": "respond",
+        "race": true
       },
       {
         "rule_set": [
-          "meta-bing"
+          "proxy",
+          "gfw",
+          "tld-proxy",
+          "media",
+          "games",
+          "steam",
+          "epicgames",
+          "netflix",
+          "disney",
+          "max",
+          "primevideo",
+          "appletv",
+          "youtube",
+          "tiktok",
+          "spotify",
+          "instagram",
+          "twitter",
+          "pornhub",
+          "ehentai",
+          "microsoft",
+          "apple",
+          "google",
+          "googlefcm",
+          "cryptocurrency",
+          "github",
+          "telegram",
+          "ai",
+          "networktest"
         ],
-        "server": "doh-google"
+        "action": "evaluate",
+        "server": "✈️ProxyDNS-Cloudflare",
+        "tag": "CFDNS",
+        "speculative": true,
+        "timeout": "2s"
       },
       {
         "rule_set": [
-          "meta-category-game-platforms-download",
-          "meta-win-update",
-          "meta-apple-update",
-          "meta-icloud",
-          "meta-apple"
+          "proxy",
+          "gfw",
+          "tld-proxy",
+          "media",
+          "games",
+          "steam",
+          "epicgames",
+          "netflix",
+          "disney",
+          "max",
+          "primevideo",
+          "appletv",
+          "youtube",
+          "tiktok",
+          "spotify",
+          "instagram",
+          "twitter",
+          "pornhub",
+          "ehentai",
+          "microsoft",
+          "apple",
+          "google",
+          "googlefcm",
+          "cryptocurrency",
+          "github",
+          "telegram",
+          "ai",
+          "networktest"
         ],
-        "server": "bootstrap-local-dns"
+        "match_response": "CFDNS",
+        "response_rcode": "NOERROR",
+        "ip_accept_any": true,
+        "action": "respond",
+        "race": true
       },
       {
         "rule_set": [
-          "meta-huggingface",
-          "meta-gitlab",
-          "meta-docker",
-          "meta-npmjs",
-          "meta-category-games-!cn"
+          "games-cn"
         ],
-        "server": "doh-google"
-      },
-      {
-        "rule_set": [
-          "meta-microsoft"
-        ],
-        "server": "bootstrap-local-dns"
-      },
-      {
-        "rule_set": [
-          "meta-category-scholar-!cn",
-          "meta-category-ai-!cn",
-          "meta-notion",
-          "meta-slack",
-          "meta-reddit",
-          "meta-category-social-media-!cn"
-        ],
-        "server": "doh-google"
-      },
-      {
-        "domain_suffix": [
-          "cn",
-          "xn--fiqs8s",
-          "xn--55qx5d",
-          "xn--io0a7i"
-        ],
-        "server": "bootstrap-local-dns"
-      },
-      {
-        "rule_set": [
-          "lyc-geosite-cn",
-          "metacubex-geosite-cn",
-          "karing-acl4ssr-china-domain"
-        ],
-        "server": "bootstrap-local-dns"
-      },
-      {
-        "rule_set": [
-          "meta-category-dev",
-          "meta-category-media",
-          "meta-category-entertainment",
-          "meta-category-communication",
-          "metacubex-geosite-geolocation-not-cn"
-        ],
-        "server": "doh-google"
+        "server": "🚩DirectDNS-Ali"
       }
     ],
     "final": "doh-cloudflare",
@@ -457,7 +501,7 @@
       "outbounds": [
         "block"
       ],
-      "default": "block"
+      "default": "proxy"
     },
     {
       "tag": "proxy-rule",
@@ -632,334 +676,540 @@
     "rule_set": [
       {
         "type": "local",
-        "tag": "lyc-geosite-ads",
+        "tag": "fakeip-filter",
         "format": "binary",
-        "path": "rules/geosite-category-ads-all.srs"
+        "path": "rules/fakeip-filter.srs"
       },
       {
         "type": "local",
-        "tag": "lyc-geosite-cn",
+        "tag": "ads",
         "format": "binary",
-        "path": "rules/geosite-cn.srs"
+        "path": "rules/ads.srs"
       },
       {
         "type": "local",
-        "tag": "lyc-geoip-cn",
+        "tag": "private",
         "format": "binary",
-        "path": "rules/geoip-cn.srs"
+        "path": "rules/private.srs"
       },
       {
         "type": "local",
-        "tag": "lyc-geoip-telegram",
+        "tag": "applications",
         "format": "binary",
-        "path": "rules/geoip-telegram.srs"
+        "path": "rules/applications.srs"
       },
       {
         "type": "local",
-        "tag": "metacubex-geosite-cn",
+        "tag": "microsoft-cn",
         "format": "binary",
-        "path": "rules/metacubex-geosite-cn.srs"
+        "path": "rules/microsoft-cn.srs"
       },
       {
         "type": "local",
-        "tag": "metacubex-geoip-cn",
+        "tag": "apple-cn",
         "format": "binary",
-        "path": "rules/metacubex-geoip-cn.srs"
+        "path": "rules/apple-cn.srs"
       },
       {
         "type": "local",
-        "tag": "metacubex-geosite-geolocation-not-cn",
+        "tag": "games-cn",
         "format": "binary",
-        "path": "rules/metacubex-geosite-geolocation-not-cn.srs"
+        "path": "rules/games-cn.srs"
       },
       {
         "type": "local",
-        "tag": "hagezi-light",
+        "tag": "games",
         "format": "binary",
-        "path": "rules/hagezi-light.srs"
+        "path": "rules/games.srs"
       },
       {
         "type": "local",
-        "tag": "karing-acl4ssr-wechat",
+        "tag": "netflix",
         "format": "binary",
-        "path": "rules/karing-acl4ssr-wechat.srs"
+        "path": "rules/netflix.srs"
       },
       {
         "type": "local",
-        "tag": "service-wechat-dns",
+        "tag": "disney",
         "format": "binary",
-        "path": "rules/service-wechat-dns.srs"
+        "path": "rules/disney.srs"
       },
       {
         "type": "local",
-        "tag": "karing-acl4ssr-china-domain",
+        "tag": "max",
         "format": "binary",
-        "path": "rules/karing-acl4ssr-china-domain.srs"
+        "path": "rules/max.srs"
       },
       {
         "type": "local",
-        "tag": "karing-acl4ssr-china-ip",
+        "tag": "primevideo",
         "format": "binary",
-        "path": "rules/karing-acl4ssr-china-ip.srs"
+        "path": "rules/primevideo.srs"
       },
       {
         "type": "local",
-        "tag": "meta-tencent",
+        "tag": "appletv",
         "format": "binary",
-        "path": "rules/metacubex-service-tencent.srs"
+        "path": "rules/appletv.srs"
       },
       {
         "type": "local",
-        "tag": "meta-category-doh",
+        "tag": "youtube",
         "format": "binary",
-        "path": "rules/metacubex-service-category-doh.srs"
+        "path": "rules/youtube.srs"
       },
       {
         "type": "local",
-        "tag": "meta-category-ip-geo-detect",
+        "tag": "tiktok",
         "format": "binary",
-        "path": "rules/metacubex-service-category-ip-geo-detect.srs"
+        "path": "rules/tiktok.srs"
       },
       {
         "type": "local",
-        "tag": "meta-connectivity-check",
+        "tag": "bilibili",
         "format": "binary",
-        "path": "rules/metacubex-service-connectivity-check.srs"
+        "path": "rules/bilibili.srs"
       },
       {
         "type": "local",
-        "tag": "meta-speedtest",
+        "tag": "spotify",
         "format": "binary",
-        "path": "rules/metacubex-service-speedtest.srs"
+        "path": "rules/spotify.srs"
       },
       {
         "type": "local",
-        "tag": "meta-openai",
+        "tag": "media",
         "format": "binary",
-        "path": "rules/metacubex-service-openai.srs"
+        "path": "rules/media.srs"
       },
       {
         "type": "local",
-        "tag": "meta-google-gemini",
+        "tag": "ai",
         "format": "binary",
-        "path": "rules/metacubex-service-google-gemini.srs"
+        "path": "rules/ai.srs"
       },
       {
         "type": "local",
-        "tag": "meta-xai",
+        "tag": "networktest",
         "format": "binary",
-        "path": "rules/metacubex-service-xai.srs"
+        "path": "rules/networktest.srs"
       },
       {
         "type": "local",
-        "tag": "meta-anthropic",
+        "tag": "tld-proxy",
         "format": "binary",
-        "path": "rules/metacubex-service-anthropic.srs"
+        "path": "rules/tld-proxy.srs"
       },
       {
         "type": "local",
-        "tag": "meta-bing@cn",
+        "tag": "gfw",
         "format": "binary",
-        "path": "rules/metacubex-service-bing@cn.srs"
+        "path": "rules/gfw.srs"
       },
       {
         "type": "local",
-        "tag": "meta-bing",
+        "tag": "proxy",
         "format": "binary",
-        "path": "rules/metacubex-service-bing.srs"
+        "path": "rules/proxy.srs"
       },
       {
         "type": "local",
-        "tag": "meta-category-game-platforms-download",
+        "tag": "cn",
         "format": "binary",
-        "path": "rules/metacubex-service-category-game-platforms-download.srs"
+        "path": "rules/cn.srs"
       },
       {
         "type": "local",
-        "tag": "meta-win-update",
+        "tag": "privateip",
         "format": "binary",
-        "path": "rules/metacubex-service-win-update.srs"
+        "path": "rules/privateip.srs"
       },
       {
         "type": "local",
-        "tag": "meta-apple-update",
+        "tag": "cnip",
         "format": "binary",
-        "path": "rules/metacubex-service-apple-update.srs"
+        "path": "rules/cnip.srs"
       },
       {
         "type": "local",
-        "tag": "meta-icloud",
+        "tag": "telegramip",
         "format": "binary",
-        "path": "rules/metacubex-service-icloud.srs"
+        "path": "rules/telegramip.srs"
       },
       {
         "type": "local",
-        "tag": "meta-apple",
+        "tag": "netflixip",
         "format": "binary",
-        "path": "rules/metacubex-service-apple.srs"
+        "path": "rules/netflixip.srs"
       },
       {
         "type": "local",
-        "tag": "meta-microsoft",
+        "tag": "mediaip",
         "format": "binary",
-        "path": "rules/metacubex-service-microsoft.srs"
+        "path": "rules/mediaip.srs"
       },
       {
         "type": "local",
-        "tag": "meta-category-scholar-!cn",
+        "tag": "telegram",
         "format": "binary",
-        "path": "rules/metacubex-service-category-scholar-!cn.srs"
+        "path": "rules/telegram.srs"
       },
       {
         "type": "local",
-        "tag": "meta-category-ai-!cn",
+        "tag": "github",
         "format": "binary",
-        "path": "rules/metacubex-service-category-ai-!cn.srs"
+        "path": "rules/github.srs"
       },
       {
         "type": "local",
-        "tag": "meta-category-dev",
+        "tag": "google",
         "format": "binary",
-        "path": "rules/metacubex-service-category-dev.srs"
+        "path": "rules/google.srs"
       },
       {
         "type": "local",
-        "tag": "meta-category-media",
+        "tag": "steam",
         "format": "binary",
-        "path": "rules/metacubex-service-category-media.srs"
+        "path": "rules/steam.srs"
       },
       {
         "type": "local",
-        "tag": "meta-category-games-!cn",
+        "tag": "epicgames",
         "format": "binary",
-        "path": "rules/metacubex-service-category-games-!cn.srs"
+        "path": "rules/epicgames.srs"
       },
       {
         "type": "local",
-        "tag": "meta-category-social-media-!cn",
+        "tag": "instagram",
         "format": "binary",
-        "path": "rules/metacubex-service-category-social-media-!cn.srs"
+        "path": "rules/instagram.srs"
       },
       {
         "type": "local",
-        "tag": "meta-telegram",
+        "tag": "twitter",
         "format": "binary",
-        "path": "rules/metacubex-service-telegram.srs"
+        "path": "rules/twitter.srs"
       },
       {
         "type": "local",
-        "tag": "meta-twitter",
+        "tag": "microsoft",
         "format": "binary",
-        "path": "rules/metacubex-service-twitter.srs"
+        "path": "rules/microsoft.srs"
       },
       {
         "type": "local",
-        "tag": "meta-whatsapp",
+        "tag": "apple",
         "format": "binary",
-        "path": "rules/metacubex-service-whatsapp.srs"
+        "path": "rules/apple.srs"
       },
       {
         "type": "local",
-        "tag": "meta-google",
+        "tag": "cryptocurrency",
         "format": "binary",
-        "path": "rules/metacubex-service-google.srs"
+        "path": "rules/cryptocurrency.srs"
       },
       {
         "type": "local",
-        "tag": "meta-google-play",
+        "tag": "googlefcm",
         "format": "binary",
-        "path": "rules/metacubex-service-google-play.srs"
+        "path": "rules/googlefcm.srs"
       },
       {
         "type": "local",
-        "tag": "meta-category-entertainment",
+        "tag": "pornhub",
         "format": "binary",
-        "path": "rules/metacubex-service-category-entertainment.srs"
+        "path": "rules/pornhub.srs"
       },
       {
         "type": "local",
-        "tag": "meta-category-communication",
+        "tag": "ehentai",
         "format": "binary",
-        "path": "rules/metacubex-service-category-communication.srs"
+        "path": "rules/ehentai.srs"
       },
       {
         "type": "local",
-        "tag": "meta-github",
+        "tag": "OpenAI",
         "format": "binary",
-        "path": "rules/metacubex-service-github.srs"
+        "path": "rules/OpenAI.srs"
       },
       {
         "type": "local",
-        "tag": "meta-huggingface",
+        "tag": "Claude",
         "format": "binary",
-        "path": "rules/metacubex-service-huggingface.srs"
+        "path": "rules/Claude.srs"
       },
       {
         "type": "local",
-        "tag": "meta-gitlab",
+        "tag": "Gemini",
         "format": "binary",
-        "path": "rules/metacubex-service-gitlab.srs"
+        "path": "rules/Gemini.srs"
       },
       {
         "type": "local",
-        "tag": "meta-docker",
+        "tag": "Copilot",
         "format": "binary",
-        "path": "rules/metacubex-service-docker.srs"
+        "path": "rules/Copilot.srs"
       },
       {
         "type": "local",
-        "tag": "meta-npmjs",
+        "tag": "Anthropic",
         "format": "binary",
-        "path": "rules/metacubex-service-npmjs.srs"
+        "path": "rules/Anthropic.srs"
       },
       {
         "type": "local",
-        "tag": "meta-notion",
+        "tag": "YouTubeMusic",
         "format": "binary",
-        "path": "rules/metacubex-service-notion.srs"
+        "path": "rules/YouTubeMusic.srs"
       },
       {
         "type": "local",
-        "tag": "meta-discord",
+        "tag": "HBO",
         "format": "binary",
-        "path": "rules/metacubex-service-discord.srs"
+        "path": "rules/HBO.srs"
       },
       {
         "type": "local",
-        "tag": "meta-slack",
+        "tag": "ParamountPlus",
         "format": "binary",
-        "path": "rules/metacubex-service-slack.srs"
+        "path": "rules/ParamountPlus.srs"
       },
       {
         "type": "local",
-        "tag": "meta-reddit",
+        "tag": "Peacock",
         "format": "binary",
-        "path": "rules/metacubex-service-reddit.srs"
+        "path": "rules/Peacock.srs"
       },
       {
         "type": "local",
-        "tag": "meta-spotify",
+        "tag": "DiscoveryPlus",
         "format": "binary",
-        "path": "rules/metacubex-service-spotify.srs"
+        "path": "rules/DiscoveryPlus.srs"
       },
       {
         "type": "local",
-        "tag": "meta-netflix",
+        "tag": "DAZN",
         "format": "binary",
-        "path": "rules/metacubex-service-netflix.srs"
+        "path": "rules/DAZN.srs"
       },
       {
         "type": "local",
-        "tag": "meta-youtube",
+        "tag": "Abema",
         "format": "binary",
-        "path": "rules/metacubex-service-youtube.srs"
+        "path": "rules/Abema.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Niconico",
+        "format": "binary",
+        "path": "rules/Niconico.srs"
+      },
+      {
+        "type": "local",
+        "tag": "NowE",
+        "format": "binary",
+        "path": "rules/NowE.srs"
+      },
+      {
+        "type": "local",
+        "tag": "ViuTV",
+        "format": "binary",
+        "path": "rules/ViuTV.srs"
+      },
+      {
+        "type": "local",
+        "tag": "WeTV",
+        "format": "binary",
+        "path": "rules/WeTV.srs"
+      },
+      {
+        "type": "local",
+        "tag": "iQIYIIntl",
+        "format": "binary",
+        "path": "rules/iQIYIIntl.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Bahamut",
+        "format": "binary",
+        "path": "rules/Bahamut.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Discord",
+        "format": "binary",
+        "path": "rules/Discord.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Facebook",
+        "format": "binary",
+        "path": "rules/Facebook.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Reddit",
+        "format": "binary",
+        "path": "rules/Reddit.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Pinterest",
+        "format": "binary",
+        "path": "rules/Pinterest.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Snap",
+        "format": "binary",
+        "path": "rules/Snap.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Whatsapp",
+        "format": "binary",
+        "path": "rules/Whatsapp.srs"
+      },
+      {
+        "type": "local",
+        "tag": "LinkedIn",
+        "format": "binary",
+        "path": "rules/LinkedIn.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Blizzard",
+        "format": "binary",
+        "path": "rules/Blizzard.srs"
+      },
+      {
+        "type": "local",
+        "tag": "EA",
+        "format": "binary",
+        "path": "rules/EA.srs"
+      },
+      {
+        "type": "local",
+        "tag": "UBI",
+        "format": "binary",
+        "path": "rules/UBI.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Riot",
+        "format": "binary",
+        "path": "rules/Riot.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Rockstar",
+        "format": "binary",
+        "path": "rules/Rockstar.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Nintendo",
+        "format": "binary",
+        "path": "rules/Nintendo.srs"
+      },
+      {
+        "type": "local",
+        "tag": "PlayStation",
+        "format": "binary",
+        "path": "rules/PlayStation.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Xbox",
+        "format": "binary",
+        "path": "rules/Xbox.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Garena",
+        "format": "binary",
+        "path": "rules/Garena.srs"
+      },
+      {
+        "type": "local",
+        "tag": "PikPak",
+        "format": "binary",
+        "path": "rules/PikPak.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Dropbox",
+        "format": "binary",
+        "path": "rules/Dropbox.srs"
+      },
+      {
+        "type": "local",
+        "tag": "MEGA",
+        "format": "binary",
+        "path": "rules/MEGA.srs"
+      },
+      {
+        "type": "local",
+        "tag": "OneDrive",
+        "format": "binary",
+        "path": "rules/OneDrive.srs"
+      },
+      {
+        "type": "local",
+        "tag": "GoogleDrive",
+        "format": "binary",
+        "path": "rules/GoogleDrive.srs"
+      },
+      {
+        "type": "local",
+        "tag": "iCloud",
+        "format": "binary",
+        "path": "rules/iCloud.srs"
+      },
+      {
+        "type": "local",
+        "tag": "GitLab",
+        "format": "binary",
+        "path": "rules/GitLab.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Docker",
+        "format": "binary",
+        "path": "rules/Docker.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Notion",
+        "format": "binary",
+        "path": "rules/Notion.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Figma",
+        "format": "binary",
+        "path": "rules/Figma.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Nvidia",
+        "format": "binary",
+        "path": "rules/Nvidia.srs"
+      },
+      {
+        "type": "local",
+        "tag": "Adobe",
+        "format": "binary",
+        "path": "rules/Adobe.srs"
+      },
+      {
+        "type": "local",
+        "tag": "PayPal",
+        "format": "binary",
+        "path": "rules/PayPal.srs"
       }
     ],
     "rules": [
-      {
-        "port": 53,
-        "action": "hijack-dns"
-      },
       {
         "inbound": [
           "mixed-in",
@@ -968,61 +1218,27 @@
         "action": "sniff"
       },
       {
-        "protocol": "dns",
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "protocol": "dns"
+          },
+          {
+            "port": 53
+          }
+        ],
         "action": "hijack-dns"
       },
       {
-        "protocol": "icmp",
-        "outbound": "block"
-      },
-      {
-        "ip_cidr": [
-          "0.0.0.0/8"
+        "wifi_ssid": [
+          "橘子🍊"
         ],
-        "outbound": "block"
-      },
-      {
-        "domain": [
-          "flash.sec.miui.com",
-          "fraud-detection.engine.miui.com",
-          "eps.caict.ac.cn",
-          "gateway-papa.cloud.weizhi.com"
-        ],
-        "action": "reject"
-      },
-      {
-        "domain": [
-          "dm.wo.com.cn"
-        ],
-        "port": 18080,
-        "action": "reject"
-      },
-      {
-        "domain_suffix": [
-          "lmm.best"
-        ],
-        "outbound": "proxy"
-      },
-      {
-        "clash_mode": "Direct",
         "outbound": "direct"
       },
       {
-        "clash_mode": "Global",
-        "outbound": "select"
-      },
-      {
-        "domain_suffix": [
-          "local",
-          "home.arpa",
-          "lan"
-        ],
-        "outbound": "lan"
-      },
-      {
-        "domain_suffix": [
-          "tailscale.net",
-          "ts.net"
+        "rule_set": [
+          "private"
         ],
         "outbound": "lan"
       },
@@ -1031,352 +1247,227 @@
         "outbound": "lan"
       },
       {
-        "ip_cidr": [
-          "10.0.0.0/8",
-          "100.64.0.0/10",
-          "127.0.0.0/8",
-          "169.254.0.0/16",
-          "172.16.0.0/12",
-          "192.168.0.0/16",
-          "224.0.0.0/4",
-          "::1/128",
-          "fc00::/7",
-          "fe80::/10",
-          "ff00::/8",
-          "fd7a:115c:a1e0::/48"
+        "rule_set": [
+          "privateip"
         ],
         "outbound": "lan"
       },
       {
-        "package_name": [
-          "com.openai.chatgpt",
-          "com.openai.chat",
-          "ai.openai.chatgpt"
-        ],
-        "outbound": "ai-chatgpt"
-      },
-      {
-        "package_name": [
-          "com.google.android.apps.bard"
-        ],
-        "outbound": "ai-gemini"
-      },
-      {
-        "package_name": [
-          "ai.x.grok"
-        ],
-        "outbound": "ai-grok"
-      },
-      {
-        "package_name": [
-          "com.anthropic.claude"
-        ],
-        "outbound": "ai-claude"
-      },
-      {
-        "package_name": [
-          "com.twitter.android"
-        ],
-        "outbound": "twitter-proxy"
-      },
-      {
-        "package_name": [
-          "com.android.vending",
-          "com.google.android.gms",
-          "com.google.android.gsf"
-        ],
-        "outbound": "google-proxy"
-      },
-      {
         "rule_set": [
-          "meta-google-gemini"
-        ],
-        "outbound": "ai-gemini"
-      },
-      {
-        "rule_set": [
-          "meta-google-play"
-        ],
-        "outbound": "google-proxy"
-      },
-      {
-        "domain": [
-          "accounts.google.com",
-          "android.clients.google.com",
-          "android.googleapis.com",
-          "android.apis.google.com",
-          "oauth2.googleapis.com",
-          "mtalk.google.com",
-          "checkin.gstatic.com"
-        ],
-        "outbound": "google-proxy"
-      },
-      {
-        "rule_set": [
-          "lyc-geosite-ads",
-          "hagezi-light"
+          "ads"
         ],
         "outbound": "ad-block"
       },
       {
-        "rule_set": [
-          "meta-youtube"
+        "clash_mode": "direct",
+        "outbound": "direct"
+      },
+      {
+        "clash_mode": "global",
+        "outbound": "final"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "port": 853
+          },
+          {
+            "network": "udp",
+            "port": 443
+          },
+          {
+            "protocol": "stun"
+          }
         ],
-        "outbound": "youtube-proxy"
+        "action": "reject"
       },
       {
         "rule_set": [
-          "meta-google"
-        ],
-        "outbound": "google-proxy"
-      },
-      {
-        "rule_set": [
-          "meta-tencent"
+          "applications"
         ],
         "outbound": "cn-direct"
       },
       {
         "rule_set": [
-          "karing-acl4ssr-wechat"
-        ],
-        "outbound": "cn-direct"
-      },
-      {
-        "rule_set": [
-          "meta-category-doh",
-          "meta-category-ip-geo-detect"
-        ],
-        "outbound": "dns-guard"
-      },
-      {
-        "port": 853,
-        "outbound": "dns-guard"
-      },
-      {
-        "domain_suffix": [
-          "edu.cn",
-          "moe.gov.cn",
-          "chsi.com.cn",
-          "smartedu.cn",
-          "neea.cn",
-          "ncss.cn",
-          "icourse163.org",
-          "icourses.cn",
-          "xuetangx.com",
-          "yuketang.cn",
-          "chaoxing.com",
-          "zhihuishu.com",
-          "eol.cn",
-          "cnki.net",
-          "wanfangdata.com.cn",
-          "cqvip.com"
-        ],
-        "outbound": "cn-direct"
-      },
-      {
-        "domain": [
-          "connect.rom.miui.com",
-          "connectivitycheck.platform.hicloud.com"
-        ],
-        "outbound": "cn-direct"
-      },
-      {
-        "rule_set": [
-          "meta-connectivity-check",
-          "meta-speedtest"
-        ],
-        "outbound": "network-test"
-      },
-      {
-        "rule_set": [
-          "meta-openai"
-        ],
-        "outbound": "ai-chatgpt"
-      },
-      {
-        "rule_set": [
-          "meta-xai"
-        ],
-        "outbound": "ai-grok"
-      },
-      {
-        "rule_set": [
-          "meta-anthropic"
-        ],
-        "outbound": "ai-claude"
-      },
-      {
-        "rule_set": [
-          "meta-github"
-        ],
-        "outbound": "github-proxy"
-      },
-      {
-        "rule_set": [
-          "meta-discord"
-        ],
-        "outbound": "discord-proxy"
-      },
-      {
-        "rule_set": [
-          "meta-netflix"
-        ],
-        "outbound": "netflix-proxy"
-      },
-      {
-        "rule_set": [
-          "meta-spotify"
-        ],
-        "outbound": "spotify-proxy"
-      },
-      {
-        "rule_set": [
-          "meta-twitter"
-        ],
-        "outbound": "twitter-proxy"
-      },
-      {
-        "rule_set": [
-          "meta-whatsapp"
-        ],
-        "outbound": "whatsapp-proxy"
-      },
-      {
-        "rule_set": [
-          "meta-telegram"
-        ],
-        "outbound": "telegram-proxy"
-      },
-      {
-        "rule_set": [
-          "meta-bing@cn"
-        ],
-        "outbound": "cn-direct"
-      },
-      {
-        "rule_set": [
-          "meta-bing"
-        ],
-        "outbound": "bing"
-      },
-      {
-        "rule_set": [
-          "meta-category-game-platforms-download",
-          "meta-win-update",
-          "meta-apple-update"
-        ],
-        "outbound": "download-direct"
-      },
-      {
-        "rule_set": [
-          "meta-icloud"
-        ],
-        "outbound": "icloud"
-      },
-      {
-        "rule_set": [
-          "meta-apple"
-        ],
-        "outbound": "apple-cn"
-      },
-      {
-        "rule_set": [
-          "meta-huggingface",
-          "meta-gitlab",
-          "meta-docker",
-          "meta-npmjs"
-        ],
-        "outbound": "dev-proxy"
-      },
-      {
-        "rule_set": [
-          "meta-category-games-!cn"
-        ],
-        "outbound": "game-proxy"
-      },
-      {
-        "rule_set": [
-          "meta-microsoft"
+          "microsoft-cn"
         ],
         "outbound": "microsoft-cn"
       },
       {
         "rule_set": [
-          "meta-category-scholar-!cn"
+          "apple-cn"
         ],
-        "outbound": "proxy-rule"
+        "outbound": "apple-cn"
       },
       {
         "rule_set": [
-          "meta-category-ai-!cn"
-        ],
-        "outbound": "ai-proxy"
-      },
-      {
-        "rule_set": [
-          "meta-notion",
-          "meta-slack",
-          "meta-reddit",
-          "meta-category-social-media-!cn"
-        ],
-        "outbound": "social-proxy"
-      },
-      {
-        "domain_suffix": [
-          "cn",
-          "xn--fiqs8s",
-          "xn--55qx5d",
-          "xn--io0a7i"
+          "games-cn"
         ],
         "outbound": "cn-direct"
       },
       {
         "rule_set": [
-          "lyc-geosite-cn",
-          "metacubex-geosite-cn",
-          "karing-acl4ssr-china-domain"
+          "games",
+          "steam",
+          "epicgames",
+          "Blizzard",
+          "EA",
+          "UBI",
+          "Riot",
+          "Rockstar",
+          "Nintendo",
+          "PlayStation",
+          "Xbox",
+          "Garena"
         ],
-        "outbound": "cn-direct"
+        "outbound": "game-proxy"
       },
       {
         "rule_set": [
-          "meta-category-dev"
+          "youtube",
+          "YouTubeMusic"
         ],
-        "outbound": "dev-proxy"
+        "outbound": "youtube-proxy"
       },
       {
         "rule_set": [
-          "meta-category-media",
-          "meta-category-entertainment"
+          "netflix",
+          "disney",
+          "max",
+          "primevideo",
+          "appletv",
+          "tiktok",
+          "spotify",
+          "netflixip",
+          "HBO",
+          "ParamountPlus",
+          "Peacock",
+          "DiscoveryPlus",
+          "DAZN",
+          "Abema",
+          "Niconico",
+          "NowE",
+          "ViuTV",
+          "WeTV",
+          "iQIYIIntl",
+          "Bahamut"
         ],
         "outbound": "media-proxy"
       },
       {
         "rule_set": [
-          "meta-category-communication"
+          "bilibili"
+        ],
+        "outbound": "cn-direct"
+      },
+      {
+        "rule_set": [
+          "media",
+          "mediaip",
+          "pornhub",
+          "ehentai"
+        ],
+        "outbound": "media-proxy"
+      },
+      {
+        "rule_set": [
+          "Discord",
+          "Facebook",
+          "Reddit",
+          "Pinterest",
+          "Snap",
+          "Whatsapp",
+          "LinkedIn",
+          "instagram",
+          "twitter"
         ],
         "outbound": "social-proxy"
       },
       {
         "rule_set": [
-          "metacubex-geosite-geolocation-not-cn"
+          "ai",
+          "OpenAI",
+          "Claude",
+          "Gemini",
+          "Copilot",
+          "Anthropic"
         ],
-        "outbound": "proxy-rule"
+        "outbound": "ai-proxy"
       },
       {
         "rule_set": [
-          "lyc-geoip-telegram"
+          "PikPak",
+          "Dropbox",
+          "MEGA",
+          "OneDrive",
+          "GoogleDrive",
+          "iCloud"
+        ],
+        "outbound": "download-direct"
+      },
+      {
+        "rule_set": [
+          "telegram",
+          "telegramip"
         ],
         "outbound": "telegram-proxy"
       },
       {
         "rule_set": [
-          "lyc-geoip-cn",
-          "metacubex-geoip-cn",
-          "karing-acl4ssr-china-ip"
+          "networktest"
         ],
-        "outbound": "cn-direct"
+        "outbound": "network-test"
+      },
+      {
+        "protocol": "bittorrent",
+        "outbound": "download-direct"
+      },
+      {
+        "rule_set": [
+          "cn"
+        ],
+        "outbound": "direct"
+      },
+      {
+        "rule_set": [
+          "cnip"
+        ],
+        "outbound": "direct"
+      },
+      {
+        "rule_set": [
+          "cnip"
+        ],
+        "invert": true,
+        "outbound": "proxy-rule"
+      },
+      {
+        "rule_set": [
+          "microsoft",
+          "apple",
+          "google",
+          "googlefcm",
+          "cryptocurrency",
+          "github",
+          "GitLab",
+          "Docker",
+          "Notion",
+          "Figma",
+          "Nvidia",
+          "Adobe",
+          "PayPal"
+        ],
+        "outbound": "proxy-rule"
+      },
+      {
+        "rule_set": [
+          "tld-proxy",
+          "gfw",
+          "proxy"
+        ],
+        "outbound": "proxy-rule"
       }
     ],
     "final": "final",
@@ -1401,5 +1492,19 @@
       ],
       "access_control_allow_private_network": true
     }
-  }
+  },
+  "endpoints": [],
+  "ntp": {
+    "enabled": true,
+    "server": "ntp.aliyun.com",
+    "server_port": 123,
+    "interval": "30m"
+  },
+  "http_clients": [
+    {
+      "tag": "default",
+      "version": 2,
+      "detour": "final"
+    }
+  ]
 }
