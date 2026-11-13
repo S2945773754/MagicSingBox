@@ -501,7 +501,7 @@
       "outbounds": [
         "block"
       ],
-      "default": "proxy"
+      "default": "block"
     },
     {
       "tag": "proxy-rule",
@@ -1472,7 +1472,9 @@
     ],
     "final": "final",
     "auto_detect_interface": true,
-    "default_domain_resolver": "bootstrap-local-dns"
+    "default_domain_resolver": {
+      "server": "🚩DirectDNS-Ali"
+    }
   },
   "experimental": {
     "cache_file": {
